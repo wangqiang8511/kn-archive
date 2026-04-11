@@ -119,32 +119,51 @@ You are a personal knowledge curator. Your job is to process bookmarked links fr
 
 ## Phase 1: Scan for Unprocessed Daily Notes
 
-**Goal:** Find all daily notes that haven't been processed yet.
+**Goal:** Find all daily notes that have unprocessed links (either no marker, or new links added after marker).
 
 1. **Find all daily notes** in the vault matching pattern `YYYY-MM-DD.md`:
    ```bash
    find "$VAULT_PATH" -maxdepth 1 -name "20[0-9][0-9]-[0-1][0-9]-[0-3][0-9].md" -type f | sort
    ```
 
-2. **Filter for unprocessed notes** - read each file and check for `<!-- processed -->` marker:
-   - Use Read tool to check each daily note
-   - If the note does NOT contain `<!-- processed -->`, add it to the processing list
-   - Count total unprocessed notes
+2. **Check each note for unprocessed links:**
 
-3. **Report findings to user:**
+   For each daily note, read content and determine status:
+
+   **Case A: No `<!-- processed -->` marker**
+   - All links in the file are unprocessed
+   - Add entire file to processing list
+
+   **Case B: Has `<!-- processed -->` marker**
+   - Split content at the `<!-- processed -->` marker
+   - Check if there are any URLs AFTER the marker (in the "Archived Links" section or below)
+   - If URLs exist after the marker, these are NEW links added after processing
+   - Extract those new links and mark note for reprocessing
+
+   **Case C: Has marker, no new links**
+   - Skip this note - fully processed
+
+3. **For notes with new links after marker (Case B):**
+   - Extract all original links (before `<!-- processed -->`)
+   - Extract all new links (after `<!-- processed -->`)
+   - Merge them together at the top
+   - This will be the new structure after processing
+
+4. **Report findings to user:**
    ```
-   Found X unprocessed daily note(s):
-   - 2026-04-11.md (1 link)
-   - 2026-04-10.md (2 links)
+   Found X daily note(s) with unprocessed links:
+   - 2026-04-11.md (1 new link added after processing)
+   - 2026-04-10.md (2 links, never processed)
 
    Ready to process? This will:
    - Fetch content from each link
    - Categorize and summarize articles
    - Create markdown files in category folders
+   - Reorganize daily notes properly (links at top, then marker, then archived section)
    - Mark daily notes as processed
    ```
 
-4. **Confirm with user before proceeding** (unless they specified auto-mode).
+5. **Confirm with user before proceeding** (unless they specified auto-mode).
 
 ---
 
@@ -154,13 +173,35 @@ For each unprocessed daily note:
 
 ### Step 2.1: Extract Links
 
-1. Read the daily note content
-2. Extract all URLs - look for lines that:
+1. **Read the daily note content**
+
+2. **Determine which links to process:**
+
+   **If note has NO `<!-- processed -->` marker:**
+   - Extract all URLs from the entire file
+   - These are all new, unprocessed links
+
+   **If note HAS `<!-- processed -->` marker:**
+   - Split content at `<!-- processed -->`
+   - Extract URLs from BEFORE marker (already processed links - keep for reference)
+   - Extract URLs from AFTER marker (NEW links to process)
+   - Only process the NEW links found after the marker
+   - Track both sets separately
+
+3. **Extract URLs** - look for lines that:
    - Start with `http://` or `https://`
    - May be part of markdown links `[text](url)`
    - May have leading/trailing whitespace
-3. Validate each URL is well-formed
-4. Report: `Processing [filename] - found X link(s)`
+   - Ignore URLs in the "Archived Links" section that are already formatted as `[Title](path)`
+
+4. **Validate each URL is well-formed**
+
+5. **Report findings:**
+   ```
+   Processing [filename]:
+   - Already processed: X links (kept for reference)
+   - New links to process: Y links
+   ```
 
 ### Step 2.2: Fetch and Analyze Each Link
 
@@ -301,28 +342,82 @@ For each file created:
 
 ---
 
-## Phase 4: Mark Daily Notes as Processed
+## Phase 4: Mark Daily Notes as Processed and Reorganize
 
 After successfully processing all links in a daily note:
 
-1. **Read the current daily note content**
+### Step 4.1: Reorganize Note Structure
 
-2. **Append processing marker:**
+**Critical:** Daily notes must always follow this structure:
+```markdown
+[All links at top - both old and new]
+https://link1.com
+https://link2.com
+https://link3.com
+
+<!-- processed -->
+
+## Archived Links
+- [Link 1 Title](category/file1.md) - Category - X min
+- [Link 2 Title](category/file2.md) - Category - Y min
+- [Link 3 Title](category/file3.md) - Category - Z min
+```
+
+**Implementation:**
+
+1. **Extract existing processed links:**
+   - If note has `<!-- processed -->` marker, extract the "Archived Links" section
+   - Parse existing archived entries to preserve them
+
+2. **Collect successfully processed URLs:**
+   - Extract URLs that appeared BEFORE the `<!-- processed -->` marker (old successful ones)
+   - Extract URLs that were just processed successfully (new successful ones)
+   - **Important:** Do NOT include URLs that failed to fetch - those stay unprocessed
+
+3. **Build new archived links list:**
+   - Merge existing archived entries with newly processed entries
+   - Sort by date if multiple entries exist
+   - Format: `- [Title](path) - Category - Reading time`
+   - **Do NOT add entries for failed fetches** - failed URLs stay above the marker
+
+4. **Write reorganized content:**
+
+   **If all links processed successfully:**
    ```markdown
+   {All URLs at top - one per line}
 
    <!-- processed -->
 
    ## Archived Links
-   {For each link processed:}
-   - [{article_title}]({category}/{filename}) - {category} - {reading_time}
+   {All archived entries - old + new}
    ```
 
-3. **Write updated content back to daily note**
+   **If some links failed to fetch:**
+   ```markdown
+   {Only FAILED URLs at top - to be retried next run}
 
-4. **Report completion:**
+   <!-- NO processed marker - note is still unprocessed -->
    ```
-   ✓ Marked {filename} as processed
+
+   **If some succeeded and some failed (mixed result):**
+   ```markdown
+   {Failed URLs at top}
+
+   <!-- processed -->
+
+   ## Archived Links
+   {Only successful archived entries}
+
+   {Note: Failed URLs remain above marker for retry}
    ```
+
+### Step 4.2: Report Completion
+
+```
+✓ Reorganized and marked {filename} as processed
+  - Moved {X} new link(s) to top section
+  - Updated archived links section
+```
 
 ---
 
@@ -330,45 +425,35 @@ After successfully processing all links in a daily note:
 
 ### Failed URL Fetch
 
+**CRITICAL: Do NOT guess or make up content when fetch fails.**
+
 If WebFetch fails for a URL:
 
-1. Log the error clearly:
+1. **Log the error clearly:**
    ```
    ✗ Failed to fetch: {URL}
    Reason: {error message}
    ```
 
-2. Create error note in Random Thoughts folder:
-   ```markdown
-   ---
-   source: {URL}
-   date_added: {YYYY-MM-DD}
-   category: Random Thoughts
-   read_status: fetch_failed
-   tags: [error, failed-fetch]
-   reading_time: 0 min
-   ---
+2. **Do NOT process this link - leave it in the daily note for retry:**
+   - Do NOT create any markdown file for this link
+   - Do NOT add manual summaries or guessed information
+   - Do NOT move the link or mark it as archived
+   - Leave the URL in the daily note exactly where it was
+   - The link will be retried on the next run
 
-   # Failed to Fetch Content
+3. **Remove the `<!-- processed -->` marker from the daily note:**
+   - If this was the only link to process, remove the marker entirely
+   - If there were multiple links and some succeeded, keep the marker but leave failed link BEFORE it
+   - This ensures failed links will be picked up on next run
 
-   ## Error Details
-   - **URL**: {URL}
-   - **Date Attempted**: {YYYY-MM-DD}
-   - **Error**: {error message}
-
-   ## Action Needed
-   - Try fetching manually
-   - Check if URL requires authentication
-   - Verify URL is still valid
-
-   ## Original Link
-   {URL}
-
-   ---
-   *Added from daily note: {YYYY-MM-DD.md}*
+4. **Report the failure:**
+   ```
+   ⚠️ Skipped 1 link due to fetch failure - will retry next run:
+   - {URL} ({error reason})
    ```
 
-3. Continue processing remaining links
+5. **Continue processing remaining links**
 
 ### Duplicate Detection
 
@@ -401,9 +486,10 @@ After processing all daily notes, provide summary:
 ╚══════════════════════════════════════════════╝
 
 📊 Statistics:
-- Daily notes processed: {X}
-- Links archived: {Y}
-- Failed fetches: {Z}
+- Daily notes fully processed: {X}
+- Daily notes partially processed: {Y} (some links failed)
+- Links successfully archived: {Z}
+- Links failed (will retry next run): {W}
 
 📁 Files created by category:
 - AI: {count} articles
@@ -413,12 +499,13 @@ After processing all daily notes, provide summary:
 
 ⏱️  Total time: {X} seconds
 
-✅ All daily notes marked as processed.
+✅ Status: {DONE | DONE_WITH_CONCERNS}
 
 Next steps:
 - Review archived articles in category folders
-- Articles marked as "not_read" - use /knowledge-archiver --mark-read when done
-- Failed fetches saved in Random Thoughts folder for manual review
+- Articles marked as "not_read" - ready for reading
+- Failed fetches left in daily notes - will be retried on next run
+- Run /knowledge-archiver again to retry failed links
 ```
 
 ---
