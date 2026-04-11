@@ -112,8 +112,107 @@ You are a personal knowledge curator. Your job is to process bookmarked links fr
 ## Workflow Overview
 
 ```
-1. Scan daily notes → 2. Extract links → 3. Fetch content → 4. AI categorize & summarize → 5. Save to folders → 6. Mark processed
+0. Scan for research questions → 1. Scan daily notes → 2. Extract links → 3. Fetch content → 4. AI categorize & summarize → 5. Save to folders → 6. Mark processed
 ```
+
+---
+
+## Phase 0: Scan for Research Questions (Auto-Expansion)
+
+**Goal:** Find archived articles with research questions and automatically expand them into new links.
+
+### Detection
+
+1. **Scan all archived articles** in category folders:
+   ```bash
+   find "$VAULT_PATH" -type f -name "*.md" ! -path "*/.*" | grep -E "(AI|Data Engineer|Product Project Management|Random Thoughts)/"
+   ```
+
+2. **Check each article for research questions:**
+   - Look for `## Research Questions` section
+   - Check if already marked as expanded: `✅ Expanded on YYYY-MM-DD`
+   - If found and not expanded, add to expansion list
+
+3. **Report findings:**
+   ```
+   Found X article(s) with research questions to expand:
+   - AI/2026-04-11-anatomy-of-agent-harness.md (3 questions)
+   - Data Engineer/2026-04-08-dolt-git-for-data.md (2 questions)
+   ```
+
+### Expansion Process (per article)
+
+For each article with unexpanded research questions:
+
+**Step 1: Extract questions**
+```markdown
+## Research Questions
+- How do other frameworks handle context rot?
+- What are production examples of agent memory systems?
+- Performance benchmarks for LangGraph vs Claude SDK
+```
+
+**Step 2: Generate search queries**
+
+For each question, use AI to generate 2-3 targeted search queries:
+```
+Question: "How do other frameworks handle context rot?"
+Queries:
+- "LangChain context window management techniques"
+- "agent framework context compression strategies"
+- "LLM context degradation solutions production"
+```
+
+**Step 3: Generate research links**
+
+For each question, curate 2-4 high-quality links:
+- Use AI to suggest relevant resources based on question content
+- Prioritize: GitHub repos, technical blogs, papers, documentation
+- Format: actual URLs that are likely to exist and be relevant
+- **IMPORTANT:** Focus on real, discoverable resources, not made-up links
+
+**Generate links like:**
+```
+Question: How do other frameworks handle context rot?
+Suggested links:
+- https://python.langchain.com/docs/how_to/trim_messages/
+- https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/long-context-tips
+- https://github.com/langchain-ai/langchain/discussions/context-management
+```
+
+**Step 4: Create research daily note**
+
+Create new daily note: `YYYY-MM-DD.md` (today's date)
+```markdown
+# Research Expansion
+Source: [Article Title](category/article-filename.md)
+
+## Question: How do other frameworks handle context rot?
+https://python.langchain.com/docs/how_to/trim_messages/
+https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/long-context-tips
+
+## Question: What are production examples of agent memory systems?
+https://github.com/microsoft/autogen/tree/main/notebook/agentchat_memory
+https://langchain-ai.github.io/langgraph/concepts/memory/
+
+---
+*Research generated from: [Article Title](category/article-filename.md)*
+```
+
+**Step 5: Mark original article as expanded**
+
+Update the original article:
+```markdown
+## Research Questions
+✅ Expanded on 2026-04-12 - See [2026-04-12.md](../2026-04-12.md)
+
+- How do other frameworks handle context rot?
+- What are production examples of agent memory systems?
+```
+
+**Step 6: Continue to standard processing**
+
+The newly created daily note will be picked up by Phase 1 and processed automatically.
 
 ---
 
@@ -485,7 +584,12 @@ After processing all daily notes, provide summary:
 ║     Knowledge Archiver - Summary Report      ║
 ╚══════════════════════════════════════════════╝
 
-📊 Statistics:
+🔬 Research Expansion:
+- Articles with research questions found: {X}
+- Research questions expanded: {Y}
+- Research daily notes created: {Z}
+
+📊 Link Processing:
 - Daily notes fully processed: {X}
 - Daily notes partially processed: {Y} (some links failed)
 - Links successfully archived: {Z}
@@ -504,8 +608,9 @@ After processing all daily notes, provide summary:
 Next steps:
 - Review archived articles in category folders
 - Articles marked as "not_read" - ready for reading
+- Research questions automatically expanded into new daily notes
 - Failed fetches left in daily notes - will be retried on next run
-- Run /knowledge-archiver again to retry failed links
+- Run /knowledge-archiver again to retry failed links or expand new research questions
 ```
 
 ---

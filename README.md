@@ -13,6 +13,31 @@ Turn your daily bookmark collection into a curated, searchable knowledge base wi
 4. Generates comprehensive + concise summaries
 5. Creates structured markdown files in category folders
 6. Marks daily notes as processed
+7. **NEW:** Auto-expands research questions into new research links
+
+## Research Expansion (Auto-Discovery)
+
+After reading archived articles, add research questions directly in the article:
+
+```markdown
+# The Anatomy of an Agent Harness
+
+[... article content ...]
+
+## Research Questions
+- How do other frameworks handle context rot?
+- What are production examples of agent memory systems?
+- Performance benchmarks for LangGraph vs Claude SDK
+```
+
+**Next time you run `/knowledge-archiver`:**
+- Automatically detects research questions
+- Generates relevant search queries
+- Creates new daily note with research links
+- Processes those links automatically
+- Marks original article as "✅ Expanded"
+
+**Result:** Your questions become new curated articles, creating a growing knowledge graph from your curiosity.
 
 ## Quick Start
 
@@ -106,6 +131,81 @@ Processing 2026-04-11.md...
 
 ✅ DONE
 ```
+
+### Research Expansion Usage
+
+**Step 1:** After reading an article, add research questions:
+
+```bash
+# Edit the archived article
+nano "AI/2026-04-11-anatomy-of-agent-harness.md"
+```
+
+Add at the end:
+```markdown
+## Research Questions
+- How do other frameworks handle context rot?
+- What are production examples of agent memory systems?
+```
+
+**Step 2:** Run the archiver (same command):
+
+```bash
+/knowledge-archiver
+```
+
+**Example output:**
+```
+🔬 Research Expansion Phase
+Found 1 article with research questions:
+- AI/2026-04-11-anatomy-of-agent-harness.md (2 questions)
+
+Expanding research for: The Anatomy of an Agent Harness
+
+Question 1: How do other frameworks handle context rot?
+  ✓ Generated search queries
+  ✓ Found 3 relevant links
+
+Question 2: What are production examples of agent memory systems?
+  ✓ Generated search queries
+  ✓ Found 3 relevant links
+
+✓ Created research daily note: 2026-04-12.md (6 links)
+✓ Marked original article as expanded
+
+📊 Processing daily notes...
+Found 1 unprocessed daily note: 2026-04-12.md
+
+Processing 2026-04-12.md...
+  [1/6] https://python.langchain.com/docs/how_to/trim_messages/
+    ✓ Fetched content
+    ✓ Categorized as: AI
+    ✓ Saved to: AI/2026-04-12-langchain-context-trimming.md
+
+  [2/6] https://docs.anthropic.com/en/docs/long-context-tips
+    ✓ Fetched content
+    ✓ Categorized as: AI
+    ✓ Saved to: AI/2026-04-12-anthropic-long-context.md
+
+  [... continues for all 6 links ...]
+
+╔══════════════════════════════════════════════╗
+║     Knowledge Archiver - Summary Report      ║
+╚══════════════════════════════════════════════╝
+
+🔬 Research Expansion:
+- Articles with research questions: 1
+- Research questions expanded: 2
+- Research links generated: 6
+
+📊 Link Processing:
+- Daily notes processed: 1
+- Links archived: 6
+
+✅ DONE
+```
+
+**Result:** Your 2 questions became 6 new curated articles!
 
 ## Output Format
 
