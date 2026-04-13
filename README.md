@@ -106,10 +106,11 @@ Default categories and their detection rules:
 |----------|----------|
 | **AI** | machine learning, LLM, agent, neural network, GPT, Claude, transformer |
 | **Data Engineer** | database, pipeline, ETL, data warehouse, SQL, analytics, Spark, Kafka |
+| **Infra** | infrastructure, DevOps, OS, Linux, containers, Kubernetes, Docker, cloud, deployment |
 | **Product Project Management** | product strategy, roadmap, PM, user research, product development |
 | **Random Thoughts** | Everything else (default) |
 
-Customize categories in `SKILL.md` lines 100-103.
+Customize categories in `SKILL.md` lines 100-107.
 
 ## Usage Examples
 

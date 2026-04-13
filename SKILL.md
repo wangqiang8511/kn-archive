@@ -102,6 +102,7 @@ VAULT_PATH="/home/qiang/Documents/notes/Engineering Knowledge"
 **Categories:**
 - **AI**: Machine learning, LLMs, agents, AI systems, neural networks, deep learning, transformers
 - **Data Engineer**: Data pipelines, databases, ETL, analytics, data warehouses, data infrastructure, SQL
+- **Infra**: Infrastructure, DevOps, OS, Linux, containers, Kubernetes, Docker, cloud platforms, deployment, monitoring, networking, system administration
 - **Product Project Management**: Product strategy, PM practices, roadmaps, product development, user research
 - **Random Thoughts**: General tech, career advice, personal development, other topics
 
@@ -125,7 +126,7 @@ You are a personal knowledge curator. Your job is to process bookmarked links fr
 
 1. **Scan all archived articles** in category folders:
    ```bash
-   find "$VAULT_PATH" -type f -name "*.md" ! -path "*/.*" | grep -E "(AI|Data Engineer|Product Project Management|Random Thoughts)/"
+   find "$VAULT_PATH" -type f -name "*.md" ! -path "*/.*" | grep -E "(AI|Data Engineer|Infra|Product Project Management|Random Thoughts)/"
    ```
 
 2. **Check each article for research questions:**
@@ -335,6 +336,7 @@ For each URL:
 
    - **AI**: Keywords like "machine learning", "LLM", "agent", "neural network", "GPT", "Claude", "model", "transformer", "AI system", "deep learning"
    - **Data Engineer**: Keywords like "database", "pipeline", "ETL", "data warehouse", "SQL", "analytics", "data infrastructure", "Apache", "Spark", "Kafka"
+   - **Infra**: Keywords like "infrastructure", "DevOps", "Linux", "Unix", "OS", "containers", "Docker", "Kubernetes", "K8s", "cloud", "AWS", "GCP", "Azure", "deployment", "CI/CD", "monitoring", "networking", "system administration", "Terraform", "Ansible"
    - **Product Project Management**: Keywords like "product strategy", "roadmap", "product manager", "user research", "product development", "PM practices", "product-market fit"
    - **Random Thoughts**: Default for everything else
 
@@ -389,6 +391,7 @@ For each successfully processed link:
 ```bash
 mkdir -p "$VAULT_PATH/AI"
 mkdir -p "$VAULT_PATH/Data Engineer"
+mkdir -p "$VAULT_PATH/Infra"
 mkdir -p "$VAULT_PATH/Product Project Management"
 mkdir -p "$VAULT_PATH/Random Thoughts"
 ```
@@ -401,7 +404,7 @@ Use Write tool to create file in format:
 ---
 source: {original_url}
 date_added: {YYYY-MM-DD}
-category: {AI|Data Engineer|Product Project Management|Random Thoughts}
+category: {AI|Data Engineer|Infra|Product Project Management|Random Thoughts}
 read_status: not_read
 tags: [{tag1, tag2, tag3, tag4, tag5}]
 reading_time: {X min}
@@ -598,6 +601,7 @@ After processing all daily notes, provide summary:
 📁 Files created by category:
 - AI: {count} articles
 - Data Engineer: {count} articles
+- Infra: {count} articles
 - Product Project Management: {count} articles
 - Random Thoughts: {count} articles
 
