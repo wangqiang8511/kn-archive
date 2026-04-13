@@ -43,14 +43,33 @@ After reading archived articles, add research questions directly in the article:
 
 ### Installation
 
-This skill is part of the gstack suite. If you don't have gstack installed:
+**Quick install:**
 
 ```bash
-# Clone gstack to ~/.claude/skills/
-git clone https://github.com/your-org/gstack ~/.claude/skills/gstack
+cd /path/to/knowledge-archiver
+./install.sh
+```
 
-# Or if already installed, just use it
-/knowledge-archiver
+This will:
+- Install to `~/.claude/skills/knowledge-archiver/`
+- Optionally integrate with gstack (if installed)
+- Make the skill ready to use
+
+**Manual installation:**
+
+```bash
+# Option 1: Symlink (recommended)
+ln -sf /path/to/knowledge-archiver ~/.claude/skills/knowledge-archiver
+
+# Option 2: Copy files
+cp -r /path/to/knowledge-archiver ~/.claude/skills/knowledge-archiver
+```
+
+**Uninstall:**
+
+```bash
+cd /path/to/knowledge-archiver
+./uninstall.sh
 ```
 
 ### First Run
