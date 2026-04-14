@@ -7,13 +7,14 @@ Personal knowledge base curator for Obsidian. Automatically processes bookmarked
 Turn your daily bookmark collection into a curated, searchable knowledge base with AI-powered categorization and dual-format summaries.
 
 **What it does:**
-1. Scans Obsidian daily notes for unprocessed links
+1. Scans recent daily notes (last 7 days) for unprocessed links
 2. Fetches full article content
-3. AI-powered categorization (AI, Data Engineer, Product PM, Random Thoughts)
+3. AI-powered categorization (AI, Data Engineer, Infra, Product PM, Random Thoughts)
 4. Generates comprehensive + concise summaries
 5. Creates structured markdown files in category folders
-6. Marks daily notes as processed
-7. **NEW:** Auto-expands research questions into new research links
+6. Links related articles for Obsidian graph view
+7. Marks daily notes as processed
+8. **NEW:** Auto-expands research questions into new research links with backlinks
 
 ## Research Expansion (Auto-Discovery)
 
@@ -38,6 +39,38 @@ After reading archived articles, add research questions directly in the article:
 - Marks original article as "✅ Expanded"
 
 **Result:** Your questions become new curated articles, creating a growing knowledge graph from your curiosity.
+
+## Obsidian Graph View Integration
+
+The skill creates a connected knowledge graph, not isolated notes:
+
+**Related Articles Section:**
+- Each archived article includes a "Related Articles" section
+- Links 3-5 similar articles in the same category
+- Based on tag overlap, topic similarity, and time proximity
+- Creates bidirectional connections in Obsidian graph view
+
+**Research Backlinks:**
+- Research-generated articles link back to the source article
+- Source articles link forward to research notes
+- Creates clear research lineage in graph view
+
+**Result:**
+```
+Before: Hub-and-spoke (daily notes → articles, no connections)
+After:  Knowledge graph (articles ←→ related articles ←→ research)
+```
+
+**Example graph view:**
+```
+agent-harness.md ←→ context-management.md
+       ↓                    ↓
+   (research)          (related topic)
+       ↓                    ↓
+langgraph-memory.md ←→ autogen-memory.md
+```
+
+Category folders become knowledge clusters instead of flat lists.
 
 ## Quick Start
 

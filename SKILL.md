@@ -97,6 +97,7 @@ This only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.
 
 ```bash
 VAULT_PATH="/home/qiang/Documents/notes/Engineering Knowledge"
+DAILY_NOTES_WINDOW=7  # Only process daily notes from last 7 days
 ```
 
 **Categories:**
@@ -219,12 +220,24 @@ The newly created daily note will be picked up by Phase 1 and processed automati
 
 ## Phase 1: Scan for Unprocessed Daily Notes
 
-**Goal:** Find all daily notes that have unprocessed links (either no marker, or new links added after marker).
+**Goal:** Find all daily notes from the last 7 days that have unprocessed links (either no marker, or new links added after marker).
 
-1. **Find all daily notes** in the vault matching pattern `YYYY-MM-DD.md`:
+1. **Find recent daily notes** in the vault matching pattern `YYYY-MM-DD.md` from the last 7 days:
    ```bash
-   find "$VAULT_PATH" -maxdepth 1 -name "20[0-9][0-9]-[0-1][0-9]-[0-3][0-9].md" -type f | sort
+   # Get date 7 days ago in YYYY-MM-DD format
+   SEVEN_DAYS_AGO=$(date -d '7 days ago' +%Y-%m-%d)
+
+   # Find all daily notes and filter to last 7 days
+   find "$VAULT_PATH" -maxdepth 1 -name "20[0-9][0-9]-[0-1][0-9]-[0-3][0-9].md" -type f | \
+     while read file; do
+       filename=$(basename "$file" .md)
+       if [[ "$filename" > "$SEVEN_DAYS_AGO" ]] || [[ "$filename" == "$SEVEN_DAYS_AGO" ]]; then
+         echo "$file"
+       fi
+     done | sort
    ```
+
+   **Rationale:** Only process recent bookmarks to keep workflow focused on fresh content. Older daily notes are likely already processed or stale.
 
 2. **Check each note for unprocessed links:**
 
@@ -271,11 +284,17 @@ The newly created daily note will be picked up by Phase 1 and processed automati
 
 For each unprocessed daily note:
 
-### Step 2.1: Extract Links
+### Step 2.1: Extract Links and Context
 
 1. **Read the daily note content**
 
-2. **Determine which links to process:**
+2. **Check if this is a research expansion note:**
+   - Look for header: `# Research Expansion`
+   - Look for footer: `*Research generated from: [Article Title](category/article-filename.md)*`
+   - If found, extract the source article path and title
+   - This will be used to add backlinks in Step 3.4
+
+3. **Determine which links to process:**
 
    **If note has NO `<!-- processed -->` marker:**
    - Extract all URLs from the entire file
@@ -431,11 +450,62 @@ reading_time: {X min}
 ## Original Link
 {URL}
 
+## Related Articles
+{After creating this file, scan the same category folder for articles with similar tags or topics. List 3-5 related articles with links:}
+- [[AI/related-article-1.md|Related Article Title 1]]
+- [[AI/related-article-2.md|Related Article Title 2]]
+- [[AI/related-article-3.md|Related Article Title 3]]
+
+{This creates bidirectional links in Obsidian graph view, showing knowledge connections within categories.}
+
+{If this article came from research expansion, also add:}
+## Research Source
+*This article explores questions from: [[AI/source-article.md|Source Article Title]]*
+
 ---
-*Added from daily note: {YYYY-MM-DD.md}*
+*Note: Daily note references removed to keep graph view focused on topic connections, not dates.*
 ```
 
-### Step 3.4: Report Progress
+### Step 3.4: Find and Link Related Articles
+
+**Goal:** Create connections between articles for better Obsidian graph view.
+
+1. **Scan the same category folder** for existing articles:
+   ```bash
+   find "$VAULT_PATH/{category}/" -name "*.md" -type f | head -20
+   ```
+
+2. **Find related articles** based on:
+   - **Tag overlap**: Articles sharing 2+ tags with the new article
+   - **Topic similarity**: Articles with similar keywords in title or summary
+   - **Time proximity**: Recent articles in the same category
+
+3. **Select top 3-5 related articles** by relevance
+
+4. **Add Related Articles section** to the new file:
+   ```markdown
+   ## Related Articles
+   - [[category/2026-04-10-similar-article.md|Similar Article Title]]
+   - [[category/2026-04-09-related-topic.md|Related Topic Article]]
+   - [[category/2026-04-08-another-one.md|Another Related Article]]
+   ```
+
+5. **Optionally: Add backlinks to related articles** (for bidirectional connections):
+   - For each related article found, check if it has a "Related Articles" section
+   - If yes, append the new article to that section
+   - This creates a knowledge graph instead of isolated notes
+
+**Example workflow:**
+```
+New article: AI/2026-04-12-langchain-context.md (tags: langchain, context-management, llm)
+Existing: AI/2026-04-11-agent-harness.md (tags: agent-harness, context-management, llm)
+
+Match: Both have "context-management" and "llm" tags
+Action: Link them together in Related Articles section
+Result: Graph view shows connection between related concepts
+```
+
+### Step 3.5: Report Progress
 
 For each file created:
 ```
