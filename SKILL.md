@@ -98,6 +98,9 @@ This only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.
 ```bash
 VAULT_PATH="/home/qiang/Documents/notes/Engineering Knowledge"
 DAILY_NOTES_WINDOW=7  # Only process daily notes from last 7 days
+MAX_IMAGES_PER_ARTICLE=10  # Limit images downloaded per article
+IMAGE_MAX_SIZE="10M"  # Maximum file size for image downloads
+IMAGE_TIMEOUT=30  # Timeout in seconds for image downloads
 ```
 
 **Categories:**
@@ -334,12 +337,14 @@ For each URL:
    2. Full article content (main text only, no navigation/ads)
    3. Estimated reading time in minutes (based on word count)
    4. Key topics covered
+   5. All significant images (full URLs, filter out icons/logos/ads)
 
    Return in this format:
    TITLE: [title]
    CONTENT: [main article text]
    READING_TIME: [X minutes]
-   TOPICS: [comma-separated topics]"
+   TOPICS: [comma-separated topics]
+   IMAGES: [comma-separated full image URLs, or 'none']"
    ```
 
 2. **Handle fetch errors gracefully:**
@@ -348,6 +353,42 @@ For each URL:
      - Create a placeholder note with error details
      - Continue with next link
    - If content is too short (< 100 words), flag as potential error
+
+2.5. **Download and process images:**
+
+   If images were found in the article:
+
+   a. **Create attachments folder structure:**
+   ```bash
+   mkdir -p "$VAULT_PATH/.attachments/{category}/{article-slug}"
+   ```
+
+   b. **Download each image:**
+   - Extract image URL from IMAGES list
+   - Validate URL is absolute (starts with http:// or https://)
+   - Generate safe filename:
+     ```bash
+     # Extract extension from URL
+     EXT="${IMAGE_URL##*.}"
+     # Generate sequential filename
+     IMG_NAME="image-${INDEX}.${EXT}"
+     # Download
+     curl -sS -L --max-time 30 --max-filesize 10M \
+       -H "User-Agent: Mozilla/5.0" \
+       -o "$VAULT_PATH/.attachments/{category}/{article-slug}/${IMG_NAME}" \
+       "${IMAGE_URL}"
+     ```
+
+   c. **Handle download errors:**
+   - If curl fails (404, timeout, size limit):
+     - Log warning: `⚠️ Failed to download image: {URL}`
+     - Continue with other images
+     - Do not block article processing
+   - Track successfully downloaded images for embedding
+
+   d. **Store image metadata:**
+   - Keep mapping of: `image_url → local_path`
+   - Will be used when generating markdown in Phase 3
 
 3. **Categorize the content:**
 
@@ -446,6 +487,12 @@ reading_time: {X min}
 
 ## Why Read This
 {Brief explanation of value/relevance - who should read it and what they'll gain}
+
+## Images
+{If images were successfully downloaded, embed them here:}
+![[.attachments/{category}/{article-slug}/image-1.jpg]]
+![[.attachments/{category}/{article-slug}/image-2.png]]
+{Use Obsidian's ![[path]] syntax for image embedding. Only include successfully downloaded images.}
 
 ## Original Link
 {URL}
@@ -646,6 +693,42 @@ If the article doesn't clearly fit any category:
 - Default to "Random Thoughts"
 - Add note in comprehensive summary: "*Note: Category assignment uncertain - manual review recommended*"
 
+### Image Download Failures
+
+**CRITICAL: Image download failures should never block article processing.**
+
+If image downloads fail:
+
+1. **Log each failure:**
+   ```
+   ⚠️ Image download failed: {URL}
+   Reason: {timeout|404|size_limit|connection_error}
+   ```
+
+2. **Continue processing:**
+   - Do NOT fail the entire article
+   - Process remaining images
+   - Embed only successfully downloaded images
+   - Article is still marked as successfully processed
+
+3. **Common failure reasons:**
+   - **404 Not Found**: Image URL is broken or moved
+   - **Timeout**: Image server is slow or unresponsive (30s limit)
+   - **Size limit**: Image exceeds 10MB (likely video or very high-res)
+   - **403 Forbidden**: Image hotlinking protection or authentication required
+   - **Network error**: Connection issues
+
+4. **Handle specific cases:**
+   - If ALL images fail: Still create article, just without Images section
+   - If SOME images fail: Include successful ones, log failures
+   - If image URL is relative: Try to construct absolute URL from article domain
+
+5. **Do NOT:**
+   - Retry failed downloads (accept failure and move on)
+   - Block or delay article processing
+   - Create placeholder images
+   - Embed broken image references in markdown
+
 ---
 
 ## Final Summary Report
@@ -667,6 +750,11 @@ After processing all daily notes, provide summary:
 - Daily notes partially processed: {Y} (some links failed)
 - Links successfully archived: {Z}
 - Links failed (will retry next run): {W}
+
+🖼️  Image Processing:
+- Articles with images: {X}
+- Images successfully downloaded: {Y}
+- Images failed to download: {Z}
 
 📁 Files created by category:
 - AI: {count} articles

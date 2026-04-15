@@ -9,12 +9,13 @@ Turn your daily bookmark collection into a curated, searchable knowledge base wi
 **What it does:**
 1. Scans recent daily notes (last 7 days) for unprocessed links
 2. Fetches full article content
-3. AI-powered categorization (AI, Data Engineer, Infra, Product PM, Random Thoughts)
-4. Generates comprehensive + concise summaries
-5. Creates structured markdown files in category folders
-6. Links related articles for Obsidian graph view
-7. Marks daily notes as processed
-8. **NEW:** Auto-expands research questions into new research links with backlinks
+3. **NEW:** Extracts and downloads article images to local vault
+4. AI-powered categorization (AI, Data Engineer, Infra, Product PM, Random Thoughts)
+5. Generates comprehensive + concise summaries
+6. Creates structured markdown files in category folders with embedded images
+7. Links related articles for Obsidian graph view
+8. Marks daily notes as processed
+9. Auto-expands research questions into new research links with backlinks
 
 ## Research Expansion (Auto-Discovery)
 
@@ -39,6 +40,53 @@ After reading archived articles, add research questions directly in the article:
 - Marks original article as "✅ Expanded"
 
 **Result:** Your questions become new curated articles, creating a growing knowledge graph from your curiosity.
+
+## Image Extraction and Embedding
+
+The skill automatically extracts and downloads images from articles:
+
+**Automatic Processing:**
+- Detects all significant images in article content
+- Filters out icons, logos, and advertising images
+- Downloads images to organized vault storage
+- Embeds images directly in archived notes using Obsidian syntax
+
+**Storage Structure:**
+```
+Engineering Knowledge/
+├── .attachments/
+│   ├── AI/
+│   │   ├── 2026-04-11-anatomy-of-agent-harness/
+│   │   │   ├── image-1.jpg
+│   │   │   ├── image-2.png
+│   │   │   └── image-3.jpg
+│   │   └── 2026-04-10-transformers-explained/
+│   │       ├── image-1.png
+│   │       └── image-2.jpg
+│   ├── Data Engineer/
+│   └── ...
+```
+
+**Limits:**
+- Maximum 10 images per article
+- Maximum 10MB per image file
+- 30 second timeout per download
+- Failed downloads don't block article processing
+
+**In Archived Notes:**
+Images appear in a dedicated section before the "Related Articles" section:
+
+```markdown
+## Images
+![[.attachments/AI/2026-04-11-anatomy-of-agent-harness/image-1.jpg]]
+![[.attachments/AI/2026-04-11-anatomy-of-agent-harness/image-2.png]]
+```
+
+**Benefits:**
+- Diagrams and visualizations preserved locally
+- No broken image links when source sites change
+- Full article context available offline
+- Images visible in Obsidian preview mode
 
 ## Obsidian Graph View Integration
 
@@ -162,6 +210,7 @@ Found 1 unprocessed daily note: 2026-04-11.md
 Processing 2026-04-11.md...
   [1/1] https://www.dailydoseofds.com/p/the-anatomy-of-an-agent-harness/
     ✓ Fetched content (2,847 words, ~11 min read)
+    ✓ Downloaded 3 images
     ✓ Categorized as: AI
     ✓ Generated summaries
     ✓ Saved to: AI/2026-04-11-anatomy-of-agent-harness.md
@@ -176,6 +225,10 @@ Processing 2026-04-11.md...
 - Daily notes processed: 1
 - Links archived: 1
 - Failed fetches: 0
+
+🖼️  Images:
+- Images downloaded: 3
+- Image download failures: 0
 
 📁 Files created by category:
 - AI: 1 article
@@ -301,6 +354,10 @@ valuable is the discussion of edge cases like timeout handling and partial failu
 Essential for anyone building production AI agent systems. Provides practical
 architectural patterns and avoids common pitfalls in agent orchestration. The
 real-world examples make abstract concepts concrete.
+
+## Images
+![[.attachments/AI/2026-04-11-anatomy-of-agent-harness/image-1.jpg]]
+![[.attachments/AI/2026-04-11-anatomy-of-agent-harness/image-2.png]]
 
 ## Original Link
 https://www.dailydoseofds.com/p/the-anatomy-of-an-agent-harness/
@@ -430,6 +487,31 @@ Categories are AI-detected based on content. If miscategorized:
 - Manually move the file to correct category folder
 - Update the `category` field in frontmatter
 - Consider adjusting category keywords in SKILL.md
+
+### Images not downloading
+
+If images fail to download:
+- Check that curl is installed: `which curl`
+- Some sites block automated downloads (hotlink protection)
+- Images may be behind authentication or paywalls
+- Large images (>10MB) are skipped
+- Slow servers (>30s timeout) will fail
+- Article processing continues even if all images fail
+
+To manually download an image:
+```bash
+curl -L -o "image.jpg" "https://example.com/image.jpg"
+mv image.jpg "$VAULT_PATH/.attachments/category/article-folder/"
+```
+
+### Images not showing in Obsidian
+
+If images don't appear in preview mode:
+- Check that the `.attachments` folder exists in vault root
+- Verify image files actually downloaded (check file size > 0)
+- Ensure Obsidian is using correct vault path
+- Try closing and reopening the note
+- Images use Obsidian's `![[path]]` syntax, not markdown `![alt](path)`
 
 ## Contributing
 
