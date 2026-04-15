@@ -400,7 +400,7 @@ For each URL:
 
    a. **Create attachments folder structure:**
    ```bash
-   mkdir -p "$VAULT_PATH/.attachments/{category}/{article-slug}"
+   mkdir -p "$VAULT_PATH/attachments/{category}/{article-slug}"
    ```
 
    b. **Download each image:**
@@ -415,7 +415,7 @@ For each URL:
      # Download
      curl -sS -L --max-time 30 --max-filesize 10M \
        -H "User-Agent: Mozilla/5.0" \
-       -o "$VAULT_PATH/.attachments/{category}/{article-slug}/${IMG_NAME}" \
+       -o "$VAULT_PATH/attachments/{category}/{article-slug}/${IMG_NAME}" \
        "${IMAGE_URL}"
      ```
 
@@ -541,8 +541,8 @@ reading_time: {X min}
 
 ## Images
 {If images were successfully downloaded from web page, embed them here:}
-![[.attachments/{category}/{article-slug}/image-1.jpg]]
-![[.attachments/{category}/{article-slug}/image-2.png]]
+![[attachments/{category}/{article-slug}/image-1.jpg]]
+![[attachments/{category}/{article-slug}/image-2.png]]
 {Use Obsidian's ![[path]] syntax for image embedding. Only include successfully downloaded images.}
 {Note: PDFs don't have extractable images - this section is for web articles only. Skip this section for PDF documents.}
 

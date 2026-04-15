@@ -101,7 +101,7 @@ The skill automatically extracts and downloads images from web articles:
 **Storage Structure:**
 ```
 Engineering Knowledge/
-├── .attachments/
+├── attachments/
 │   ├── AI/
 │   │   ├── 2026-04-11-anatomy-of-agent-harness/
 │   │   │   ├── image-1.jpg
@@ -125,8 +125,8 @@ Images appear in a dedicated section before the "Related Articles" section:
 
 ```markdown
 ## Images
-![[.attachments/AI/2026-04-11-anatomy-of-agent-harness/image-1.jpg]]
-![[.attachments/AI/2026-04-11-anatomy-of-agent-harness/image-2.png]]
+![[attachments/AI/2026-04-11-anatomy-of-agent-harness/image-1.jpg]]
+![[attachments/AI/2026-04-11-anatomy-of-agent-harness/image-2.png]]
 ```
 
 **Benefits:**
@@ -464,8 +464,8 @@ Essential for anyone building **production AI agent systems**. Provides practica
 real-world examples make abstract concepts concrete.
 
 ## Images
-![[.attachments/AI/2026-04-11-anatomy-of-agent-harness/image-1.jpg]]
-![[.attachments/AI/2026-04-11-anatomy-of-agent-harness/image-2.png]]
+![[attachments/AI/2026-04-11-anatomy-of-agent-harness/image-1.jpg]]
+![[attachments/AI/2026-04-11-anatomy-of-agent-harness/image-2.png]]
 
 ## Original Link
 https://www.dailydoseofds.com/p/the-anatomy-of-an-agent-harness/
@@ -609,13 +609,13 @@ If images fail to download:
 To manually download an image:
 ```bash
 curl -L -o "image.jpg" "https://example.com/image.jpg"
-mv image.jpg "$VAULT_PATH/.attachments/category/article-folder/"
+mv image.jpg "$VAULT_PATH/attachments/category/article-folder/"
 ```
 
 ### Images not showing in Obsidian
 
 If images don't appear in preview mode:
-- Check that the `.attachments` folder exists in vault root
+- Check that the `attachments` folder exists in vault root
 - Verify image files actually downloaded (check file size > 0)
 - Ensure Obsidian is using correct vault path
 - Try closing and reopening the note
