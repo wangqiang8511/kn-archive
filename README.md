@@ -8,14 +8,15 @@ Turn your daily bookmark collection into a curated, searchable knowledge base wi
 
 **What it does:**
 1. Scans recent daily notes (last 7 days) for unprocessed links
-2. Fetches full article content
+2. Fetches full article content (web pages and PDFs)
 3. **NEW:** Extracts and downloads article images to local vault
-4. AI-powered categorization (AI, Data Engineer, Infra, Product PM, Random Thoughts)
-5. Generates comprehensive + concise summaries
-6. Creates structured markdown files in category folders with embedded images
-7. Links related articles for Obsidian graph view
-8. Marks daily notes as processed
-9. Auto-expands research questions into new research links with backlinks
+4. **NEW:** Handles PDF files with automatic text extraction and summarization
+5. AI-powered categorization (AI, Data Engineer, Infra, Product PM, Random Thoughts)
+6. Generates comprehensive + concise summaries with bold highlights for important info
+7. Creates structured markdown files in category folders with embedded images
+8. Links related articles for Obsidian graph view
+9. Marks daily notes as processed
+10. Auto-expands research questions into new research links with backlinks
 
 ## Research Expansion (Auto-Discovery)
 
@@ -41,9 +42,55 @@ After reading archived articles, add research questions directly in the article:
 
 **Result:** Your questions become new curated articles, creating a growing knowledge graph from your curiosity.
 
+## PDF Document Handling
+
+The skill automatically detects and processes PDF files:
+
+**Automatic Detection:**
+- Recognizes PDF URLs (ending in `.pdf`)
+- Downloads PDF temporarily for content extraction
+- Extracts text from up to 20 pages
+- Calculates reading time based on word count
+
+**Processing:**
+- Full text extraction from PDF pages
+- AI-powered categorization (same as web articles)
+- Generates comprehensive summaries with **bold highlights** for important concepts
+- Preserves document structure and key information
+
+**Limits:**
+- Maximum 50MB file size
+- Maximum 20 pages extracted (for performance)
+- 60 second download timeout
+- PDFs behind authentication may fail
+
+**Highlighted Summaries:**
+All summaries (web and PDF) now use **bold formatting** to emphasize:
+- Critical concepts and technical terms
+- Key findings and conclusions
+- Actionable insights and frameworks
+- Important metrics and data points
+
+**Example PDF processing:**
+```
+Processing 2026-04-15.md...
+  [1/1] https://arxiv.org/pdf/2312.00752.pdf
+    ✓ Downloaded PDF (3.2MB)
+    ✓ Extracted content (15 pages, ~5,200 words, ~21 min read)
+    ✓ Categorized as: AI
+    ✓ Generated summaries with highlights
+    ✓ Saved to: AI/2026-04-15-rag-survey.md
+```
+
+**Benefits:**
+- Research papers archived alongside web articles
+- Full-text search across all content types
+- Same categorization and tagging as web content
+- Consistent summary format with emphasis on key points
+
 ## Image Extraction and Embedding
 
-The skill automatically extracts and downloads images from articles:
+The skill automatically extracts and downloads images from web articles:
 
 **Automatic Processing:**
 - Detects all significant images in article content
@@ -238,6 +285,67 @@ Processing 2026-04-11.md...
 ✅ DONE
 ```
 
+### Processing PDF Documents
+
+Add a PDF link to your daily note:
+
+```bash
+# 2026-04-15.md
+https://arxiv.org/pdf/2312.00752.pdf
+```
+
+Run the archiver:
+
+```bash
+/knowledge-archiver
+```
+
+**Example output:**
+```
+Found 1 unprocessed daily note: 2026-04-15.md
+
+Processing 2026-04-15.md...
+  [1/1] https://arxiv.org/pdf/2312.00752.pdf
+    ✓ Downloaded PDF (3.2MB, 15 pages)
+    ✓ Extracted content (5,247 words, ~21 min read)
+    ✓ Categorized as: AI
+    ✓ Generated summaries with bold highlights
+    ✓ Saved to: AI/2026-04-15-retrieval-augmented-generation-survey.md
+
+✓ Marked 2026-04-15.md as processed
+
+╔══════════════════════════════════════════════╗
+║     Knowledge Archiver - Summary Report      ║
+╚══════════════════════════════════════════════╝
+
+📊 Statistics:
+- Daily notes processed: 1
+- Links archived: 1 (1 PDF, 0 web pages)
+- Failed fetches: 0
+
+📁 Files created by category:
+- AI: 1 article (PDF paper)
+
+⏱️  Total time: 12 seconds
+
+✅ DONE
+```
+
+**Resulting file structure:**
+```
+Engineering Knowledge/
+├── 2026-04-15.md                                    # Daily note (marked processed)
+└── AI/
+    └── 2026-04-15-retrieval-augmented-generation-survey.md
+```
+
+**Archived PDF content includes:**
+- Full text extracted from PDF
+- **Bold highlights** for key concepts and findings
+- AI categorization and tagging
+- Comprehensive and concise summaries
+- Related articles links
+
 ### Research Expansion Usage
 
 **Step 1:** After reading an article, add research questions:
@@ -330,29 +438,29 @@ reading_time: 11 min
 # The Anatomy of an Agent Harness
 
 ## TL;DR (Quick Summary)
-This article breaks down the architecture of agent harnesses, the orchestration
-layer that manages LLM agent lifecycles. Essential reading for anyone building
-production AI agents. Learn how to handle tool execution, context management,
-and failure recovery patterns.
+This article breaks down the architecture of **agent harnesses**, the orchestration
+layer that manages **LLM agent lifecycles**. Essential reading for anyone building
+**production AI agents**. Learn how to handle **tool execution**, **context management**,
+and **failure recovery patterns**.
 
 ## Comprehensive Summary
-The article explores agent harness architectures used in production LLM systems.
-It covers the key responsibilities of a harness: managing agent state, orchestrating
-tool calls, handling retries and failures, and maintaining conversation context.
-The author presents three architectural patterns (monolithic, microservice, and
-event-driven) with real-world examples from major AI companies. Particularly
-valuable is the discussion of edge cases like timeout handling and partial failures.
+The article explores **agent harness architectures** used in production LLM systems.
+It covers the key responsibilities of a harness: **managing agent state**, orchestrating
+**tool calls**, handling **retries and failures**, and maintaining **conversation context**.
+The author presents three architectural patterns (**monolithic**, **microservice**, and
+**event-driven**) with real-world examples from major AI companies. Particularly
+valuable is the discussion of edge cases like **timeout handling** and **partial failures**.
 
 ## Key Points
-- Agent harnesses act as orchestration layers between LLMs and tools
-- Three main patterns: monolithic, microservice, event-driven architectures
-- Critical to handle timeouts, retries, and partial tool execution failures
-- Context window management is a primary harness responsibility
-- Production systems need observability built into the harness layer
+- **Agent harnesses** act as orchestration layers between LLMs and tools
+- Three main patterns: **monolithic**, **microservice**, **event-driven** architectures
+- Critical to handle **timeouts**, **retries**, and **partial tool execution failures**
+- **Context window management** is a primary harness responsibility
+- Production systems need **observability** built into the harness layer
 
 ## Why Read This
-Essential for anyone building production AI agent systems. Provides practical
-architectural patterns and avoids common pitfalls in agent orchestration. The
+Essential for anyone building **production AI agent systems**. Provides practical
+**architectural patterns** and avoids common pitfalls in agent orchestration. The
 real-world examples make abstract concepts concrete.
 
 ## Images
@@ -512,6 +620,30 @@ If images don't appear in preview mode:
 - Ensure Obsidian is using correct vault path
 - Try closing and reopening the note
 - Images use Obsidian's `![[path]]` syntax, not markdown `![alt](path)`
+
+### PDF download or extraction fails
+
+If PDF processing fails:
+- Check that curl is installed: `which curl`
+- Large PDFs (>50MB) are skipped
+- Some PDFs are behind paywalls or authentication
+- Corrupted or malformed PDFs will fail extraction
+- Slow servers (>60s timeout) will fail
+- Article is left unprocessed and will retry next run
+
+To manually download a PDF:
+```bash
+curl -L -o "paper.pdf" "https://example.com/paper.pdf"
+# Then process it manually or add to a new daily note
+```
+
+### PDF content looks garbled
+
+If extracted PDF text is unreadable:
+- Some PDFs use image-based pages (scanned documents) - no text to extract
+- Encrypted or password-protected PDFs cannot be extracted
+- Complex formatting may not translate well to plain text
+- Consider manual download and reading in a PDF viewer instead
 
 ## Contributing
 

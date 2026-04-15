@@ -329,7 +329,47 @@ For each unprocessed daily note:
 
 For each URL:
 
-1. **Fetch content using WebFetch:**
+1. **Check if URL is a PDF file:**
+   ```bash
+   # Check if URL ends with .pdf
+   if [[ "$URL" =~ \.pdf$ ]]; then
+     IS_PDF=true
+   else
+     IS_PDF=false
+   fi
+   ```
+
+2. **If PDF file, handle with PDF extraction workflow:**
+
+   a. **Download PDF temporarily:**
+   ```bash
+   TEMP_PDF="/tmp/knowledge-archiver-$$.pdf"
+   curl -sS -L --max-time 60 --max-filesize 50M \
+     -H "User-Agent: Mozilla/5.0" \
+     -o "$TEMP_PDF" "$URL"
+   ```
+
+   b. **Extract PDF content using Read tool:**
+   ```
+   Use Read tool with file_path=$TEMP_PDF and pages="1-20" (limit to first 20 pages)
+   This will extract all text content from the PDF
+   ```
+
+   c. **Generate PDF metadata:**
+   ```
+   - Extract title from first page or filename
+   - Calculate reading time based on extracted word count
+   - Estimate 200-250 words per minute reading speed
+   ```
+
+   d. **Clean up temporary file:**
+   ```bash
+   rm -f "$TEMP_PDF"
+   ```
+
+   e. **Note:** PDFs don't have images to extract (they're embedded in PDF format)
+
+3. **If regular web page, fetch content using WebFetch:**
    ```
    Use WebFetch tool with prompt:
    "Extract the following from this web page:
@@ -347,8 +387,8 @@ For each URL:
    IMAGES: [comma-separated full image URLs, or 'none']"
    ```
 
-2. **Handle fetch errors gracefully:**
-   - If WebFetch fails (404, paywall, timeout):
+4. **Handle fetch errors gracefully:**
+   - If WebFetch or PDF download fails (404, paywall, timeout):
      - Log the error
      - Create a placeholder note with error details
      - Continue with next link
@@ -404,25 +444,36 @@ For each URL:
 
 4. **Generate summaries:**
 
+   **IMPORTANT: Use bold formatting for emphasis**
+   - Highlight critical concepts, key findings, and important terms with **bold** text
+   - Makes summaries scannable and emphasizes what matters most
+   - Use bold for: technical terms, frameworks, metrics, conclusions, actionable insights
+
    **Comprehensive Summary (3-5 sentences):**
    - Cover the main thesis or argument
-   - Include key concepts and findings
+   - Include key concepts and findings (use **bold** for important terms)
    - Mention practical applications or implications
+   - Example: "The paper introduces **Retrieval-Augmented Generation (RAG)**, which combines **LLMs with external knowledge bases** to reduce hallucinations. The key insight is that **context injection** at inference time outperforms fine-tuning for factual accuracy."
 
    **Concise Summary (TL;DR, 1 paragraph):**
    - 3-4 sentences max
-   - What the article covers
+   - What the article covers (use **bold** for key topics)
    - Why it's worth reading
-   - Key takeaway
+   - Key takeaway (use **bold** for main conclusion)
+   - Example: "This article explores **production agent architectures** and the critical role of **harnesses** in managing LLM lifecycles. Essential reading for anyone building **production AI systems**. Learn practical patterns for **timeout handling, context management, and failure recovery**."
 
    **Key Points (3-5 bullet points):**
-   - Extract the most important insights
+   - Extract the most important insights (use **bold** for emphasis)
    - Actionable takeaways when applicable
    - Novel concepts introduced
+   - Example format:
+     - "**Agent harnesses** act as orchestration layers between LLMs and tools"
+     - "Three main patterns: **monolithic**, **microservice**, **event-driven** architectures"
+     - "Production systems need **observability** built into the harness layer"
 
    **Why Read This (1-2 sentences):**
    - Who should read it
-   - What value it provides
+   - What value it provides (use **bold** for key benefits)
 
 5. **Generate tags:**
    - Extract 3-5 relevant keywords
@@ -473,26 +524,27 @@ reading_time: {X min}
 # {Article Title}
 
 ## TL;DR (Quick Summary)
-{Concise one-paragraph summary explaining why this is worth reading}
+{Concise one-paragraph summary explaining why this is worth reading. Use **bold** for key concepts and topics.}
 
 ## Comprehensive Summary
-{3-5 sentence detailed summary covering main points}
+{3-5 sentence detailed summary covering main points. Use **bold** for important terms, findings, and conclusions.}
 
 ## Key Points
-- {Point 1}
-- {Point 2}
-- {Point 3}
-- {Point 4 (if applicable)}
-- {Point 5 (if applicable)}
+- {Point 1 with **bold** emphasis on key terms}
+- {Point 2 with **bold** emphasis on key terms}
+- {Point 3 with **bold** emphasis on key terms}
+- {Point 4 (if applicable) with **bold** emphasis}
+- {Point 5 (if applicable) with **bold** emphasis}
 
 ## Why Read This
-{Brief explanation of value/relevance - who should read it and what they'll gain}
+{Brief explanation of value/relevance - who should read it and what they'll gain. Use **bold** for key benefits.}
 
 ## Images
-{If images were successfully downloaded, embed them here:}
+{If images were successfully downloaded from web page, embed them here:}
 ![[.attachments/{category}/{article-slug}/image-1.jpg]]
 ![[.attachments/{category}/{article-slug}/image-2.png]]
 {Use Obsidian's ![[path]] syntax for image embedding. Only include successfully downloaded images.}
+{Note: PDFs don't have extractable images - this section is for web articles only. Skip this section for PDF documents.}
 
 ## Original Link
 {URL}
@@ -748,7 +800,7 @@ After processing all daily notes, provide summary:
 📊 Link Processing:
 - Daily notes fully processed: {X}
 - Daily notes partially processed: {Y} (some links failed)
-- Links successfully archived: {Z}
+- Links successfully archived: {Z} ({A} PDF, {B} web pages)
 - Links failed (will retry next run): {W}
 
 🖼️  Image Processing:
