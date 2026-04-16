@@ -221,6 +221,64 @@ The newly created daily note will be picked up by Phase 1 and processed automati
 
 ---
 
+## Common Mistakes (CRITICAL - READ THIS FIRST)
+
+Before processing any articles, understand these critical patterns:
+
+### ❌ WRONG Folder Structure (DO NOT DO THIS)
+
+```bash
+# INCORRECT - attachments inside category folder
+mkdir -p "$VAULT_PATH/AI/attachments/article-name"
+#                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#                     This creates: vault/AI/attachments/...
+```
+
+**Result:** Images end up in `Engineering Knowledge/AI/attachments/...` ❌
+
+### ✅ CORRECT Folder Structure
+
+```bash
+# CORRECT - category inside attachments folder
+mkdir -p "$VAULT_PATH/attachments/AI/article-name"
+#                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#                     This creates: vault/attachments/AI/...
+```
+
+**Result:** Images end up in `Engineering Knowledge/attachments/AI/...` ✅
+
+### Memory Aid
+
+Think: **"attachments/{category}"** not **"{category}/attachments"**
+
+The folder structure is: `vault root → attachments → category → article`
+
+### Concrete Examples
+
+**For an AI article titled "LangChain Tutorial" on 2026-04-16:**
+
+✅ **Correct paths:**
+- Article file: `AI/2026-04-16-langchain-tutorial.md`
+- Images folder: `attachments/AI/2026-04-16-langchain-tutorial/`
+- Full path: `$VAULT_PATH/attachments/AI/2026-04-16-langchain-tutorial/`
+- Markdown: `![[attachments/AI/2026-04-16-langchain-tutorial/image-1.jpg]]`
+
+❌ **Wrong paths (DO NOT CREATE):**
+- `AI/attachments/2026-04-16-langchain-tutorial/` ← attachments under category ❌
+- `AI/2026-04-16-langchain-tutorial/attachments/` ← attachments under article ❌
+
+**For an Infra article titled "Kubernetes Guide" on 2026-04-16:**
+
+✅ **Correct paths:**
+- Article file: `Infra/2026-04-16-kubernetes-guide.md`
+- Images folder: `attachments/Infra/2026-04-16-kubernetes-guide/`
+- Full path: `$VAULT_PATH/attachments/Infra/2026-04-16-kubernetes-guide/`
+- Markdown: `![[attachments/Infra/2026-04-16-kubernetes-guide/image-1.png]]`
+
+**Notice:** In all cases, `attachments` comes FIRST at the vault root, then category subfolder, then article folder.
+
+---
+
 ## Phase 1: Scan for Unprocessed Daily Notes
 
 **Goal:** Find all daily notes from the last 7 days that have unprocessed links (either no marker, or new links added after marker).
@@ -286,6 +344,39 @@ The newly created daily note will be picked up by Phase 1 and processed automati
 ## Phase 2: Process Each Daily Note
 
 For each unprocessed daily note:
+
+### Step 2.0: Declare Variables (REQUIRED FIRST STEP)
+
+**CRITICAL: Set these variables for EVERY article before proceeding with any operations.**
+
+```bash
+# Extract from daily note filename (YYYY-MM-DD.md)
+ARTICLE_DATE="2026-04-16"           # Must match daily note filename
+
+# Will be set after fetching and categorizing
+ARTICLE_TITLE="Example Article"     # From WebFetch or PDF extraction
+ARTICLE_SLUG=""                     # Sanitized version of title (set in Step 3.1)
+CATEGORY=""                         # AI|Data Engineer|Infra|Product Project Management|Random Thoughts
+
+# Computed paths (DO NOT MODIFY THESE - they follow the pattern)
+ARTICLE_PATH=""                     # Will be: $VAULT_PATH/$CATEGORY/$ARTICLE_DATE-$ARTICLE_SLUG.md
+ATTACH_DIR=""                       # Will be: $VAULT_PATH/attachments/$CATEGORY/$ARTICLE_DATE-$ARTICLE_SLUG
+```
+
+**Example values after processing:**
+```bash
+ARTICLE_DATE="2026-04-16"
+ARTICLE_TITLE="LangChain Context Management"
+ARTICLE_SLUG="2026-04-16-langchain-context-management"
+CATEGORY="AI"
+ARTICLE_PATH="$VAULT_PATH/AI/2026-04-16-langchain-context-management.md"
+ATTACH_DIR="$VAULT_PATH/attachments/AI/2026-04-16-langchain-context-management"
+```
+
+**Verify the pattern:**
+- Article path format: `$VAULT_PATH/{CATEGORY}/{ARTICLE_DATE}-{title-slug}.md`
+- Attachments path format: `$VAULT_PATH/attachments/{CATEGORY}/{ARTICLE_DATE}-{title-slug}/`
+- Markdown image format: `![[attachments/{CATEGORY}/{ARTICLE_DATE}-{title-slug}/image-X.ext]]`
 
 ### Step 2.1: Extract Links and Context
 
@@ -398,12 +489,60 @@ For each URL:
 
    If images were found in the article:
 
-   a. **Create attachments folder structure:**
+   **Step 2.5a: Create attachments folder structure**
+
+   **CRITICAL: Follow this exact pattern - attachments at vault root, then category, then article.**
+
    ```bash
-   mkdir -p "$VAULT_PATH/attachments/{category}/{article-slug}"
+   # Set the attachment directory path
+   # Pattern: $VAULT_PATH/attachments/{CATEGORY}/{ARTICLE_DATE}-{sanitized-title}
+   ATTACH_DIR="$VAULT_PATH/attachments/$CATEGORY/$ARTICLE_DATE-$ARTICLE_SLUG"
+
+   # Create the folder structure
+   mkdir -p "$ATTACH_DIR"
    ```
 
-   b. **Download each image:**
+   **Concrete example for AI article "LangChain Tutorial":**
+   ```bash
+   ATTACH_DIR="$VAULT_PATH/attachments/AI/2026-04-16-langchain-tutorial"
+   mkdir -p "$ATTACH_DIR"
+   # Creates: vault/attachments/AI/2026-04-16-langchain-tutorial/
+   ```
+
+   **Step 2.5b: VERIFY folder structure (REQUIRED)**
+
+   ```bash
+   # This MUST show: /path/to/vault/attachments/{CATEGORY}/{ARTICLE_SLUG}/
+   # NOT: /path/to/vault/{CATEGORY}/attachments/{ARTICLE_SLUG}/
+   echo "✓ Created attachments folder: $ATTACH_DIR"
+
+   # Self-check: Verify the path contains "attachments" BEFORE category
+   if [[ ! "$ATTACH_DIR" =~ /attachments/$CATEGORY/ ]]; then
+     echo "❌ ERROR: Wrong folder structure detected!"
+     echo "Expected pattern: .../attachments/$CATEGORY/..."
+     echo "Got: $ATTACH_DIR"
+     exit 1
+   fi
+
+   # Verify folder exists
+   if [ ! -d "$ATTACH_DIR" ]; then
+     echo "❌ ERROR: Failed to create attachments folder!"
+     exit 1
+   fi
+
+   echo "✓ Folder structure validated: attachments → $CATEGORY → article"
+   ```
+
+   **Expected output:**
+   ```
+   ✓ Created attachments folder: $VAULT_PATH/attachments/AI/2026-04-16-langchain-tutorial
+   ✓ Folder structure validated: attachments → AI → article
+   ```
+
+   **If the path doesn't match this pattern, STOP and fix it before continuing.**
+
+   **Step 2.5c: Download each image**
+
    - Extract image URL from IMAGES list
    - Validate URL is absolute (starts with http:// or https://)
    - Generate safe filename:
@@ -412,23 +551,53 @@ For each URL:
      EXT="${IMAGE_URL##*.}"
      # Generate sequential filename
      IMG_NAME="image-${INDEX}.${EXT}"
-     # Download
+     # Download to the CORRECT location
      curl -sS -L --max-time 30 --max-filesize 10M \
        -H "User-Agent: Mozilla/5.0" \
-       -o "$VAULT_PATH/attachments/{category}/{article-slug}/${IMG_NAME}" \
+       -o "$ATTACH_DIR/${IMG_NAME}" \
        "${IMAGE_URL}"
      ```
 
-   c. **Handle download errors:**
+   **Step 2.5d: Handle download errors**
+
    - If curl fails (404, timeout, size limit):
      - Log warning: `⚠️ Failed to download image: {URL}`
      - Continue with other images
      - Do not block article processing
    - Track successfully downloaded images for embedding
 
-   d. **Store image metadata:**
+   **Step 2.5e: Store image metadata**
+
    - Keep mapping of: `image_url → local_path`
    - Will be used when generating markdown in Phase 3
+   - Remember: markdown path is `![[attachments/$CATEGORY/$ARTICLE_SLUG/image-X.ext]]`
+
+### Step 2.6: Checkpoint - Verify State Before Continuing
+
+**At this point, you should have:**
+
+- [ ] `ARTICLE_DATE` set to daily note date (YYYY-MM-DD)
+- [ ] `ARTICLE_TITLE` extracted from WebFetch or PDF
+- [ ] `CATEGORY` determined based on content analysis
+- [ ] `ARTICLE_SLUG` generated (will be set in Phase 3 Step 3.1)
+- [ ] `ATTACH_DIR` set to: `$VAULT_PATH/attachments/$CATEGORY/$ARTICLE_SLUG`
+- [ ] Attachments folder created at: `vault/attachments/{CATEGORY}/{ARTICLE_SLUG}/`
+- [ ] Images downloaded (if applicable) to the correct folder
+
+**Run this self-check before proceeding to Phase 3:**
+
+```bash
+# Verify folder structure is correct
+[ -d "$VAULT_PATH/attachments/$CATEGORY" ] && echo "✓ Category folder exists under attachments/" || echo "✗ ERROR: Wrong structure!"
+
+# Verify images are in the right place (if images were downloaded)
+if [ -n "$(ls -A "$ATTACH_DIR" 2>/dev/null)" ]; then
+  echo "✓ Images saved to: $ATTACH_DIR"
+  ls -lh "$ATTACH_DIR" | tail -n +2
+fi
+```
+
+**If any checks fail, STOP and fix the issue before continuing to Phase 3.**
 
 3. **Categorize the content:**
 
